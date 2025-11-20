@@ -172,7 +172,7 @@ def cli(model, query, threads, output):
         for exc in search_results.excluded_content:
             excluded_info += f"- {exc['link']} ({exc['title'][:50]}...): {exc['reason']}\n"
 
-    # Generate the intelligence summary.
+    # Generate the intelligence summary (automatically chunks large datasets)
     summary = generate_summary(llm, query, scraped_content + excluded_info)
 
     # Save or print the summary

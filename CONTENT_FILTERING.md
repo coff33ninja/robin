@@ -122,6 +122,17 @@ MAX_RESULTS=0
 ```
 **⚠️ WARNING**: This will process ALL search results and can result in very high API costs!
 
+## Automatic Chunking for Large Datasets
+
+When processing a large number of results (MAX_RESULTS=0 or high values), Robin automatically chunks the data to prevent LLM token limit issues:
+
+- **Automatic Detection**: If content exceeds ~50,000 characters, it's automatically split into chunks
+- **Smart Splitting**: Content is split at URL boundaries to keep related data together
+- **Multi-Pass Analysis**: Each chunk is analyzed separately, then synthesized into a final report
+- **Progress Tracking**: Console shows chunk processing progress
+
+This allows you to process hundreds of results without hitting token limits or getting stuck in loops.
+
 ## Best Practices
 
 1. **Always set a blocklist** - Include illegal content categories you never want to encounter
@@ -129,6 +140,8 @@ MAX_RESULTS=0
 3. **Review excluded content** - Check the "Excluded Content" section to ensure nothing important was filtered
 4. **Adjust as needed** - Refine your filters based on results
 5. **Be specific** - Use precise keywords for better filtering accuracy
+6. **Start with MAX_RESULTS=20** - Test your query with a smaller dataset first, then increase if needed
+7. **Monitor API costs** - Large datasets (MAX_RESULTS=0) can consume significant API tokens
 
 ## Security Note
 

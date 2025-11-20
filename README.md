@@ -21,6 +21,8 @@
 - 🐳 **Docker-Ready** – Optional Docker deployment for clean, isolated usage.
 - 📝 **Custom Reporting** – Save investigation output to file for reporting or further analysis.
 - 🧩 **Extensible** – Easy to plug in new search engines, models, or output formats.
+- 🔒 **Content Filtering** – Configurable allowlist/blocklist for controlling what content gets analyzed. See [CONTENT_FILTERING.md](CONTENT_FILTERING.md) for details.
+- 📊 **Automatic Chunking** – Handles large datasets by automatically splitting content to avoid LLM token limits.
 
 ---
 
@@ -56,6 +58,13 @@ For Windows users running Robin natively (without Docker/WSL):
    ANTHROPIC_API_KEY=your_anthropic_api_key_here
    GOOGLE_API_KEY=your_google_api_key_here
    OLLAMA_BASE_URL=http://127.0.0.1:11434
+   
+   # Content Filtering (Optional) - See CONTENT_FILTERING.md for details
+   CONTENT_ALLOWLIST=
+   CONTENT_BLOCKLIST=
+   FILTER_NSFW=true
+   FILTER_IRRELEVANT=true
+   MAX_RESULTS=20
    ```
 
 3. **Tor will start automatically** when you run `python main.py ui` or `python main.py cli`. No manual Tor service management needed!
@@ -91,6 +100,19 @@ robin cli --model gpt-4.1 --query "ransomware payments"
 pip install -r requirements.txt
 python main.py -m gpt-4.1 -q "ransomware payments" -t 12
 ```
+
+---
+
+## Content Filtering
+
+Robin supports configurable content filtering to give you control over what data gets analyzed. You can:
+
+- **Block specific keywords** - Automatically exclude content containing certain terms
+- **Allow specific keywords** - Override filters for investigation-relevant content
+- **Toggle NSFW filtering** - Control whether sensitive content is included
+- **Set result limits** - Process anywhere from 20 to ALL search results (with automatic chunking)
+
+For complete documentation on content filtering, allowlists, blocklists, and best practices, see **[CONTENT_FILTERING.md](CONTENT_FILTERING.md)**.
 
 ---
 

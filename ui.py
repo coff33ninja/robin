@@ -189,7 +189,7 @@ if run_button and query:
             st.subheader(":red[Investigation Summary]", anchor=None, divider="gray")
         summary_slot = st.empty()
 
-    # 6e) Inject your two callbacks and invoke exactly as before
+    # 6e) Inject your two callbacks and invoke (automatically chunks large datasets)
     with status_slot.container():
         with st.spinner("✍️ Generating summary..."):
             stream_handler = BufferedStreamingHandler(ui_callback=ui_emit)
