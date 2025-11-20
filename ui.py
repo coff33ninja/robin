@@ -156,7 +156,12 @@ if run_button and query:
     # 6a) Prepare session state for streaming text
     st.session_state.streamed_summary = ""
 
-    # 6b) Prepare excluded info
+    # 6b) Convert scraped results dict to formatted string
+    scraped_content = ""
+    for url, content in st.session_state.scraped.items():
+        scraped_content += f"\n\n--- URL: {url} ---\n{content}\n"
+    
+    # 6c) Prepare excluded info
     excluded_info = ""
     
     # Add excluded search engines
@@ -173,7 +178,7 @@ if run_button and query:
         for exc in st.session_state.results.excluded_content:
             excluded_info += f"- {exc['link']} ({exc['title'][:50]}...): {exc['reason']}\n"
 
-    # 6c) UI callback for each chunk
+    # 6d) UI callback for each chunk
     def ui_emit(chunk: str):
         st.session_state.streamed_summary += chunk
         summary_slot.markdown(st.session_state.streamed_summary)
@@ -184,12 +189,12 @@ if run_button and query:
             st.subheader(":red[Investigation Summary]", anchor=None, divider="gray")
         summary_slot = st.empty()
 
-    # 6d) Inject your two callbacks and invoke exactly as before
+    # 6e) Inject your two callbacks and invoke exactly as before
     with status_slot.container():
         with st.spinner("✍️ Generating summary..."):
             stream_handler = BufferedStreamingHandler(ui_callback=ui_emit)
             llm.callbacks = [stream_handler]
-            _ = generate_summary(llm, query, st.session_state.scraped + excluded_info)
+            _ = generate_summary(llm, query, scraped_content + excluded_info)
 
     with btn_col:
         now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

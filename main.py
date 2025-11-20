@@ -150,6 +150,11 @@ def cli(model, query, threads, output):
         scraped_results = scrape_multiple(search_filtered, max_workers=threads)
         sp.ok("✔")
 
+    # Convert scraped results dict to formatted string
+    scraped_content = ""
+    for url, content in scraped_results.items():
+        scraped_content += f"\n\n--- URL: {url} ---\n{content}\n"
+    
     # Prepare excluded info
     excluded_info = ""
     
@@ -168,7 +173,7 @@ def cli(model, query, threads, output):
             excluded_info += f"- {exc['link']} ({exc['title'][:50]}...): {exc['reason']}\n"
 
     # Generate the intelligence summary.
-    summary = generate_summary(llm, query, scraped_results + excluded_info)
+    summary = generate_summary(llm, query, scraped_content + excluded_info)
 
     # Save or print the summary
     if not output:
