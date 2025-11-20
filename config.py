@@ -21,3 +21,6 @@ CONTENT_ALLOWLIST = parse_list("CONTENT_ALLOWLIST")
 CONTENT_BLOCKLIST = parse_list("CONTENT_BLOCKLIST")
 FILTER_NSFW = os.getenv("FILTER_NSFW", "true").lower() == "true"
 FILTER_IRRELEVANT = os.getenv("FILTER_IRRELEVANT", "true").lower() == "true"
+
+# Maximum results to process (0 = no limit)
+MAX_RESULTS = int(os.getenv("MAX_RESULTS", "20"))

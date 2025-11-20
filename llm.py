@@ -10,6 +10,7 @@ from config import (
     CONTENT_BLOCKLIST,
     FILTER_NSFW,
     FILTER_IRRELEVANT,
+    MAX_RESULTS,
 )
 
 warnings.filterwarnings("ignore")
@@ -63,13 +64,21 @@ def filter_results(llm, query, results):
     if not results:
         return []
 
-    system_prompt = """
-    You are a Cybercrime Threat Intelligence Expert. You are given a dark web search query and a list of search results in the form of index, link and title. 
-    Your task is select the Top 20 relevant results that best match the search query for user to investigate more.
-    Rule:
-    1. Output ONLY atmost top 20 indices (comma-separated list) no more than that that best match the input query
+    # If MAX_RESULTS is 0, return all results without filtering
+    if MAX_RESULTS == 0:
+        print(f"[INFO] MAX_RESULTS=0: Processing all {len(results)} results without LLM filtering")
+        return results
 
-    Search Query: {query}
+    # Use configured MAX_RESULTS or default to 20
+    max_limit = MAX_RESULTS if MAX_RESULTS > 0 else 20
+
+    system_prompt = f"""
+    You are a Cybercrime Threat Intelligence Expert. You are given a dark web search query and a list of search results in the form of index, link and title. 
+    Your task is select the Top {max_limit} relevant results that best match the search query for user to investigate more.
+    Rule:
+    1. Output ONLY atmost top {max_limit} indices (comma-separated list) no more than that that best match the input query
+
+    Search Query: {{query}}
     Search Results:
     """
 
@@ -109,11 +118,11 @@ def filter_results(llm, query, results):
             "Unable to interpret LLM result selection ('%s'). "
             "Defaulting to the top %s results.",
             result_indices,
-            min(len(results), 20),
+            min(len(results), max_limit),
         )
-        parsed_indices = list(range(1, min(len(results), 20) + 1))
+        parsed_indices = list(range(1, min(len(results), max_limit) + 1))
 
-    top_results = [results[i - 1] for i in parsed_indices[:20]]
+    top_results = [results[i - 1] for i in parsed_indices[:max_limit]]
 
     return top_results
 

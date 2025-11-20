@@ -22,6 +22,11 @@ FILTER_NSFW=true
 
 # Filter irrelevant content (true/false) - if true, off-topic results will be excluded
 FILTER_IRRELEVANT=true
+
+# Maximum number of results to process (0 = no limit, processes all results)
+# Default is 20 to manage API costs and processing time
+# WARNING: Processing all results can be expensive and time-consuming
+MAX_RESULTS=20
 ```
 
 ## How It Works
@@ -56,6 +61,12 @@ CONTENT_ALLOWLIST=ransomware,exploit,vulnerability,breach
 - Allowlist keywords override this filter
 - Set to `false` to disable relevance filtering
 
+### Max Results Limit
+- `MAX_RESULTS` controls how many search results are processed
+- Default is `20` to manage API costs and processing time
+- Set to `0` to process **ALL** results without any limit
+- **WARNING**: Setting to 0 can result in high API costs and long processing times
+
 ## Excluded Content Report Section
 
 All excluded content is documented in the "Excluded Content" section of your intelligence report, which includes:
@@ -80,6 +91,7 @@ CONTENT_BLOCKLIST=gore,torture,child,animal abuse,snuff
 CONTENT_ALLOWLIST=
 FILTER_NSFW=true
 FILTER_IRRELEVANT=true
+MAX_RESULTS=20
 ```
 
 ### Investigative (Minimal Filtering)
@@ -88,6 +100,7 @@ CONTENT_BLOCKLIST=child,animal abuse
 CONTENT_ALLOWLIST=drugs,weapons,hacking,exploit,malware
 FILTER_NSFW=false
 FILTER_IRRELEVANT=false
+MAX_RESULTS=50
 ```
 
 ### Targeted Research
@@ -96,7 +109,18 @@ CONTENT_BLOCKLIST=gore,torture,snuff
 CONTENT_ALLOWLIST=ransomware,apt,threat actor,zero day
 FILTER_NSFW=true
 FILTER_IRRELEVANT=true
+MAX_RESULTS=30
 ```
+
+### Full Unfiltered (Process Everything)
+```env
+CONTENT_BLOCKLIST=
+CONTENT_ALLOWLIST=
+FILTER_NSFW=false
+FILTER_IRRELEVANT=false
+MAX_RESULTS=0
+```
+**⚠️ WARNING**: This will process ALL search results and can result in very high API costs!
 
 ## Best Practices
 
