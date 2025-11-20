@@ -1,5 +1,9 @@
 import click
 import subprocess
+import os
+import sys
+import time
+import atexit
 from yaspin import yaspin
 from datetime import datetime
 from scrape import scrape_multiple
@@ -8,6 +12,71 @@ from llm import get_llm, refine_query, filter_results, generate_summary
 from llm_utils import get_model_choices
 
 MODEL_CHOICES = get_model_choices()
+
+# Global variable to track Tor process
+_tor_process = None
+
+
+def start_tor():
+    """Start Tor service if not already running."""
+    global _tor_process
+    
+    # Check if Tor is already running on port 9050
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex(('127.0.0.1', 9050))
+    sock.close()
+    
+    if result == 0:
+        click.echo("✓ Tor is already running on port 9050")
+        return
+    
+    # Find tor executable
+    tor_path = os.path.join(os.path.dirname(__file__), "tor", "tor.exe")
+    
+    if not os.path.exists(tor_path):
+        click.echo("⚠ Warning: Tor executable not found. Please ensure Tor is running manually.")
+        return
+    
+    try:
+        click.echo("Starting Tor service...")
+        _tor_process = subprocess.Popen(
+            [tor_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
+        )
+        
+        # Wait for Tor to be ready (check port 9050)
+        for _ in range(30):  # Wait up to 30 seconds
+            time.sleep(1)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex(('127.0.0.1', 9050))
+            sock.close()
+            if result == 0:
+                click.echo("✓ Tor service started successfully")
+                return
+        
+        click.echo("⚠ Warning: Tor may not have started properly")
+    except Exception as e:
+        click.echo(f"⚠ Warning: Could not start Tor: {e}")
+
+
+def stop_tor():
+    """Stop Tor service if it was started by this script."""
+    global _tor_process
+    if _tor_process:
+        click.echo("\nStopping Tor service...")
+        _tor_process.terminate()
+        try:
+            _tor_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            _tor_process.kill()
+        click.echo("✓ Tor service stopped")
+
+
+# Register cleanup function
+atexit.register(stop_tor)
 
 
 @click.group()
@@ -48,6 +117,9 @@ def cli(model, query, threads, output):
     - robin --model claude-3-5-sonnet-latest --query "sensitive credentials exposure" --threads 8 --output filename\n
     - robin -m llama3.1 -q "zero days"\n
     """
+    # Start Tor service
+    start_tor()
+    
     llm = get_llm(model)
 
     # Show spinner while processing the query
@@ -95,8 +167,9 @@ def cli(model, query, threads, output):
 )
 def ui(ui_port, ui_host):
     """Run Robin in Web UI mode."""
-    import sys, os
-
+    # Start Tor service
+    start_tor()
+    
     # Use streamlit's internet CLI entrypoint
     from streamlit.web import cli as stcli
 

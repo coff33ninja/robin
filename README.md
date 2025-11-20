@@ -40,6 +40,26 @@
 >
 > For Ollama, provide `http://host.docker.internal:11434` as `OLLAMA_BASE_URL` in your env if running using docker method or `http://127.0.0.1:11434` for other methods. You might need to serve Ollama on 0.0.0.0 depending on your OS. You can do that using `OLLAMA_HOST=0.0.0.0 ollama serve &`.
 
+### Windows Setup (Native)
+
+For Windows users running Robin natively (without Docker/WSL):
+
+1. **Install Tor Expert Bundle:**
+   ```powershell
+   curl -o tor-expert-bundle.tar.gz https://archive.torproject.org/tor-package-archive/torbrowser/15.0.1/tor-expert-bundle-windows-x86_64-15.0.1.tar.gz
+   tar -xzf tor-expert-bundle.tar.gz
+   ```
+
+2. **Create .env file** in the project root with your API keys:
+   ```env
+   OPENAI_API_KEY=your_openai_api_key_here
+   ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   GOOGLE_API_KEY=your_google_api_key_here
+   OLLAMA_BASE_URL=http://127.0.0.1:11434
+   ```
+
+3. **Tor will start automatically** when you run `python main.py ui` or `python main.py cli`. No manual Tor service management needed!
+
 ### Docker (Web UI Mode) [Recommended]
 
 ```bash
