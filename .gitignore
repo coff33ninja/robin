@@ -175,3 +175,15 @@ cython_debug/
 
 # Vscode
 .vscode
+
+# Robin specific - scraped content and summaries
+summary_*.md
+*.md.bak
+
+# Tor data and cache
+tor/data/
+tor/cache/
+tor/*.log
+
+# Streamlit cache
+.streamlit/
