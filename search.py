@@ -1,5 +1,6 @@
 import requests
-import random, re
+import random
+import re
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -49,6 +50,7 @@ def fetch_search_results(endpoint, query):
     }
     proxies = get_tor_proxies()
     try:
+        print(f"[DEBUG] Searching: {url}")
         response = requests.get(url, headers=headers, proxies=proxies, timeout=30)
         if response.status_code == 200:
             # Normally you would parse html_content with BeautifulSoup and extract results.
@@ -63,10 +65,13 @@ def fetch_search_results(endpoint, query):
                         links.append({"title": title, "link": link[0]})
                 except:
                     continue
+            print(f"[DEBUG] Found {len(links)} results from {url}")
             return links
         else:
+            print(f"[DEBUG] Failed to fetch {url} - Status: {response.status_code}")
             return []
-    except:
+    except Exception as e:
+        print(f"[DEBUG] Error fetching {url}: {str(e)}")
         return []
 
 def get_search_results(refined_query, max_workers=5):

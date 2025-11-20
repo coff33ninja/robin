@@ -185,5 +185,5 @@ tor/data/
 tor/cache/
 tor/*.log
 
-# Streamlit cache
-.streamlit/
+# Logs directory
+logs/

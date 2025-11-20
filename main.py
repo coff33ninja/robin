@@ -38,28 +38,43 @@ def start_tor():
         click.echo("⚠ Warning: Tor executable not found. Please ensure Tor is running manually.")
         return
     
+    # Create logs directory if it doesn't exist
+    log_dir = os.path.join(os.path.dirname(__file__), "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, f"tor_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+    
     try:
         click.echo("Starting Tor service...")
+        click.echo(f"Tor logs will be saved to: {log_file}")
+        
+        # Open log file for writing
+        log_handle = open(log_file, 'w', encoding='utf-8')
+        
         _tor_process = subprocess.Popen(
             [tor_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
         )
         
         # Wait for Tor to be ready (check port 9050)
-        for _ in range(30):  # Wait up to 30 seconds
+        for i in range(30):  # Wait up to 30 seconds
             time.sleep(1)
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             result = sock.connect_ex(('127.0.0.1', 9050))
             sock.close()
             if result == 0:
                 click.echo("✓ Tor service started successfully")
+                click.echo(f"Check {log_file} for Tor connection details")
                 return
+            if i % 5 == 0:
+                click.echo(f"Waiting for Tor... ({i}/30 seconds)")
         
         click.echo("⚠ Warning: Tor may not have started properly")
+        click.echo(f"Check the log file for details: {log_file}")
     except Exception as e:
         click.echo(f"⚠ Warning: Could not start Tor: {e}")
+        click.echo(f"Check the log file for details: {log_file}")
 
 
 def stop_tor():
