@@ -8,6 +8,14 @@ from config import CONTENT_ALLOWLIST, CONTENT_BLOCKLIST
 import warnings
 warnings.filterwarnings("ignore")
 
+
+class SearchResults(list):
+    """Custom list class that can hold additional attributes for excluded data."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.excluded_services = []
+        self.excluded_content = []
+
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
@@ -114,7 +122,7 @@ def get_search_results(refined_query, max_workers=5):
 
     # Deduplicate and filter results based on the link and content filters
     seen_links = set()
-    unique_results = []
+    unique_results = SearchResults()  # Use custom class instead of plain list
     for res in results:
         link = res.get("link")
         title = res.get("title", "")
@@ -135,7 +143,7 @@ def get_search_results(refined_query, max_workers=5):
                 "reason": reason
             })
     
-    # Store excluded info for later use
+    # Store excluded info using the custom class attributes
     unique_results.excluded_services = excluded_services
     unique_results.excluded_content = excluded_content
     return unique_results
