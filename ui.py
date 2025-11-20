@@ -156,6 +156,23 @@ if run_button and query:
     # 6a) Prepare session state for streaming text
     st.session_state.streamed_summary = ""
 
+    # 6b) Prepare excluded info
+    excluded_info = ""
+    
+    # Add excluded search engines
+    if hasattr(st.session_state.results, 'excluded_services') and st.session_state.results.excluded_services:
+        excluded_info += "\n\n--- EXCLUDED SEARCH ENGINES ---\n"
+        excluded_info += "The following search engines were excluded from results due to errors:\n"
+        for exc in st.session_state.results.excluded_services:
+            excluded_info += f"- {exc['url']}: {exc['reason']}\n"
+    
+    # Add excluded content (filtered by blocklist)
+    if hasattr(st.session_state.results, 'excluded_content') and st.session_state.results.excluded_content:
+        excluded_info += "\n\n--- EXCLUDED CONTENT (FILTERED) ---\n"
+        excluded_info += "The following content was filtered based on your blocklist settings:\n"
+        for exc in st.session_state.results.excluded_content:
+            excluded_info += f"- {exc['link']} ({exc['title'][:50]}...): {exc['reason']}\n"
+
     # 6c) UI callback for each chunk
     def ui_emit(chunk: str):
         st.session_state.streamed_summary += chunk
@@ -172,7 +189,7 @@ if run_button and query:
         with st.spinner("✍️ Generating summary..."):
             stream_handler = BufferedStreamingHandler(ui_callback=ui_emit)
             llm.callbacks = [stream_handler]
-            _ = generate_summary(llm, query, st.session_state.scraped)
+            _ = generate_summary(llm, query, st.session_state.scraped + excluded_info)
 
     with btn_col:
         now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

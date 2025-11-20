@@ -150,8 +150,25 @@ def cli(model, query, threads, output):
         scraped_results = scrape_multiple(search_filtered, max_workers=threads)
         sp.ok("✔")
 
+    # Prepare excluded info
+    excluded_info = ""
+    
+    # Add excluded search engines
+    if hasattr(search_results, 'excluded_services') and search_results.excluded_services:
+        excluded_info += "\n\n--- EXCLUDED SEARCH ENGINES ---\n"
+        excluded_info += "The following search engines were excluded from results due to errors:\n"
+        for exc in search_results.excluded_services:
+            excluded_info += f"- {exc['url']}: {exc['reason']}\n"
+    
+    # Add excluded content (filtered by blocklist)
+    if hasattr(search_results, 'excluded_content') and search_results.excluded_content:
+        excluded_info += "\n\n--- EXCLUDED CONTENT (FILTERED) ---\n"
+        excluded_info += "The following content was filtered based on your blocklist settings:\n"
+        for exc in search_results.excluded_content:
+            excluded_info += f"- {exc['link']} ({exc['title'][:50]}...): {exc['reason']}\n"
+
     # Generate the intelligence summary.
-    summary = generate_summary(llm, query, scraped_results)
+    summary = generate_summary(llm, query, scraped_results + excluded_info)
 
     # Save or print the summary
     if not output:

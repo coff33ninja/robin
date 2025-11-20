@@ -1,13 +1,16 @@
 import re
 import openai
+import logging
+import warnings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from llm_utils import _common_llm_params, resolve_model_config, get_model_choices
-from config import OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY
-import logging
-import re
-
-import warnings
+from config import (
+    CONTENT_ALLOWLIST,
+    CONTENT_BLOCKLIST,
+    FILTER_NSFW,
+    FILTER_IRRELEVANT,
+)
 
 warnings.filterwarnings("ignore")
 
@@ -154,7 +157,28 @@ def _generate_final_string(results, truncate=False):
 
 
 def generate_summary(llm, query, content):
-    system_prompt = """
+    # Build filtering instructions based on config
+    filtering_rules = []
+    
+    if FILTER_NSFW:
+        filtering_rules.append("10. Filter out not safe for work (NSFW) content from the analysis")
+    
+    if FILTER_IRRELEVANT:
+        filtering_rules.append("11. Exclude irrelevant or off-topic content that doesn't match the query")
+    
+    if CONTENT_BLOCKLIST:
+        blocklist_str = ", ".join(CONTENT_BLOCKLIST)
+        filtering_rules.append(f"12. ALWAYS exclude content containing these keywords: {blocklist_str}")
+    
+    if CONTENT_ALLOWLIST:
+        allowlist_str = ", ".join(CONTENT_ALLOWLIST)
+        filtering_rules.append(f"13. ALWAYS include content containing these keywords even if flagged: {allowlist_str}")
+    
+    filtering_rules.append("14. Identify any content, links, or data that was explicitly excluded from analysis due to safety, relevance, or technical constraints.")
+    
+    filtering_instructions = "\n    ".join(filtering_rules) if filtering_rules else ""
+    
+    system_prompt = f"""
     You are an Cybercrime Threat Intelligence Expert tasked with generating context-based technical investigative insights from dark web osint search engine results.
 
     Rules:
@@ -167,14 +191,15 @@ def generate_summary(llm, query, content):
     7. Each insight should be specific, actionable, context-based, and data-driven.
     8. Include suggested next steps and queries for investigating more on the topic.
     9. Be objective and analytical in your assessment.
-    10. Ignore not safe for work texts from the analysis
+    {filtering_instructions}
 
     Output Format:
-    1. Input Query: {query}
+    1. Input Query: {{query}}
     2. Source Links Referenced for Analysis - this heading will include all source links used for the analysis
     3. Investigation Artifacts - this heading will include all technical artifacts identified including name, email, phone, cryptocurrency addresses, domains, darkweb markets, forum names, threat actor information, malware names, etc.
     4. Key Insights
-    5. Next Steps - this includes next investigative steps including search queries to search more on a specific artifacts for example or any other topic.
+    5. Excluded Content - this section lists any content, links, or data that was explicitly excluded from the analysis with reasons why they were excluded (e.g., not safe for work content, irrelevant results, inaccessible links, malformed data, blocked keywords, etc.). Include a disclaimer: "⚠️ DISCLAIMER: The following items were excluded from analysis. Exercise extreme caution if investigating these sources independently, as they may contain harmful, illegal, or disturbing content."
+    6. Next Steps - this includes next investigative steps including search queries to search more on a specific artifacts for example or any other topic.
 
     Format your response in a structured way with clear section headings.
 

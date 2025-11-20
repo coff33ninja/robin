@@ -3,6 +3,7 @@ import random
 import re
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from config import CONTENT_ALLOWLIST, CONTENT_BLOCKLIST
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -63,32 +64,78 @@ def fetch_search_results(endpoint, query):
                     link = re.findall(r'https?:\/\/[^\/]*\.onion.*', href)
                     if len(link) != 0:
                         links.append({"title": title, "link": link[0]})
-                except:
+                except Exception:
                     continue
             print(f"[DEBUG] Found {len(links)} results from {url}")
-            return links
+            return {"results": links, "excluded": None}
         else:
             print(f"[DEBUG] Failed to fetch {url} - Status: {response.status_code}")
-            return []
+            return {"results": [], "excluded": {"url": url, "reason": f"HTTP {response.status_code}"}}
     except Exception as e:
         print(f"[DEBUG] Error fetching {url}: {str(e)}")
-        return []
+        return {"results": [], "excluded": {"url": url, "reason": str(e)}}
+
+def check_content_filters(text):
+    """
+    Check if content should be filtered based on allowlist/blocklist.
+    Returns (should_include, reason)
+    """
+    text_lower = text.lower()
+    
+    # Check blocklist first - these are always excluded
+    if CONTENT_BLOCKLIST:
+        for blocked_keyword in CONTENT_BLOCKLIST:
+            if blocked_keyword in text_lower:
+                return False, f"Blocked keyword: {blocked_keyword}"
+    
+    # Check allowlist - these override other filters
+    if CONTENT_ALLOWLIST:
+        for allowed_keyword in CONTENT_ALLOWLIST:
+            if allowed_keyword in text_lower:
+                return True, None
+    
+    # Default: include the content
+    return True, None
+
 
 def get_search_results(refined_query, max_workers=5):
     results = []
+    excluded_services = []
+    excluded_content = []
+    
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [executor.submit(fetch_search_results, endpoint, refined_query)
                    for endpoint in SEARCH_ENGINE_ENDPOINTS]
         for future in as_completed(futures):
-            result_urls = future.result()
-            results.extend(result_urls)
+            result_data = future.result()
+            results.extend(result_data["results"])
+            if result_data["excluded"]:
+                excluded_services.append(result_data["excluded"])
 
-    # Deduplicate results based on the link.
+    # Deduplicate and filter results based on the link and content filters
     seen_links = set()
     unique_results = []
     for res in results:
         link = res.get("link")
-        if link not in seen_links:
+        title = res.get("title", "")
+        
+        if link in seen_links:
+            continue
+        
+        # Apply content filters
+        should_include, reason = check_content_filters(f"{title} {link}")
+        
+        if should_include:
             seen_links.add(link)
             unique_results.append(res)
+        else:
+            excluded_content.append({
+                "title": title,
+                "link": link,
+                "reason": reason
+            })
+    
+    # Store excluded info for later use
+    unique_results.excluded_services = excluded_services
+    unique_results.excluded_content = excluded_content
     return unique_results
